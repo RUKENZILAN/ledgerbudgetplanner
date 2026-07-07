@@ -5,7 +5,7 @@ classic accounting ledger. Enter your income and expenses, set a savings
 goal, and see your net monthly balance, savings projection, and
 months-to-goal calculated live in the browser — no install, no server,
 no data leaves your machine.
-
+See the live application [here](https://rukenzilan.github.io/ledgerbudgetplanner/).
 ## Features
 
 - **Income & expense tracking** — enter monthly take-home pay and editable
