@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ledger — Budget &amp; Cash Flow Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink-navy:#1B2A41;
+    --parchment:#E8DFC8;
+    --parchment-dark:#DCD0AF;
+    --ledger-green:#2F6F4E;
+    --ledger-red:#A13D2B;
+    --brass:#B08D57;
+    --charcoal:#2E2A26;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--ink-navy);
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(255,255,255,0.03), transparent 40%),
+      radial-gradient(circle at 80% 80%, rgba(255,255,255,0.03), transparent 40%);
+    color:var(--charcoal);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    padding:32px 16px;
+    display:flex;
+    justify-content:center;
+  }
+  .book{
+    width:100%;
+    max-width:1040px;
+    background:var(--parchment);
+    border-radius:4px;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.5), 0 0 0 1px rgba(176,141,87,0.4);
+    display:grid;
+    grid-template-columns:1fr 260px;
+    overflow:hidden;
+  }
+  @media (max-width:820px){
+    .book{grid-template-columns:1fr;}
+  }
+
+  /* ---------- Header ---------- */
+  .masthead{
+    grid-column:1/-1;
+    padding:36px 40px 22px;
+    border-bottom:2px solid var(--brass);
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  .masthead h1{
+    font-family:'Fraunces', serif;
+    font-optical-sizing:auto;
+    font-weight:600;
+    font-size:2.1rem;
+    margin:0;
+    letter-spacing:0.3px;
+    color:var(--ink-navy);
+  }
+  .masthead .sub{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.72rem;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--brass);
+    margin-top:4px;
+  }
+  .masthead .date{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.8rem;
+    color:var(--charcoal);
+    opacity:0.6;
+  }
+
+  /* ---------- Main ledger column ---------- */
+  .ledger-main{
+    padding:28px 40px 40px;
+    border-right:1px dashed rgba(27,42,65,0.25);
+  }
+  .section-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.72rem;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--ink-navy);
+    opacity:0.65;
+    margin:28px 0 12px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .section-label:first-child{margin-top:0;}
+  .section-label::after{
+    content:'';
+    flex:1;
+    height:1px;
+    background:rgba(27,42,65,0.2);
+  }
+
+  .income-row{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    background:rgba(255,255,255,0.35);
+    border:1px solid rgba(27,42,65,0.15);
+    border-radius:3px;
+    padding:14px 16px;
+  }
+  .income-row label{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:1rem;
+    color:var(--ink-navy);
+    flex:1;
+  }
+  .money-input{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:1rem;
+    font-weight:500;
+    width:140px;
+    text-align:right;
+    border:none;
+    border-bottom:1px solid var(--brass);
+    background:transparent;
+    padding:4px 2px;
+    color:var(--charcoal);
+  }
+  .money-input:focus{outline:none;border-bottom:1.5px solid var(--ledger-green);}
+
+  .line-item{
+    display:grid;
+    grid-template-columns:1fr auto 120px 28px;
+    align-items:center;
+    gap:10px;
+    padding:9px 0;
+    border-bottom:1px dotted rgba(27,42,65,0.3);
+  }
+  .line-item .name-input{
+    font-family:'Inter',sans-serif;
+    font-size:0.92rem;
+    border:none;
+    background:transparent;
+    color:var(--charcoal);
+    padding:4px 2px;
+  }
+  .line-item .name-input:focus{outline:none;background:rgba(255,255,255,0.5);border-radius:2px;}
+  .leader{
+    border-bottom:1px dotted rgba(27,42,65,0.35);
+    height:1px;
+    min-width:12px;
+  }
+  .line-item .money-input{width:100px;font-size:0.92rem;}
+  .remove-btn{
+    background:none;
+    border:none;
+    color:var(--ledger-red);
+    font-size:1rem;
+    cursor:pointer;
+    opacity:0.5;
+    padding:2px 6px;
+    line-height:1;
+  }
+  .remove-btn:hover{opacity:1;}
+
+  .add-row{
+    margin-top:10px;
+    background:none;
+    border:1px dashed var(--brass);
+    color:var(--ink-navy);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.78rem;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    padding:8px 14px;
+    border-radius:3px;
+    cursor:pointer;
+  }
+  .add-row:hover{background:rgba(176,141,87,0.15);}
+
+  .balance-block{
+    margin-top:26px;
+    padding-top:18px;
+    border-top:2px solid var(--ink-navy);
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+  }
+  .balance-block .label{
+    font-family:'Fraunces', serif;
+    font-weight:700;
+    font-size:1.2rem;
+    color:var(--ink-navy);
+  }
+  .balance-block .amount{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:1.6rem;
+    font-weight:600;
+  }
+  .amount.positive{color:var(--ledger-green);}
+  .amount.negative{color:var(--ledger-red);}
+
+  .goal-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+  .goal-field{
+    background:rgba(255,255,255,0.35);
+    border:1px solid rgba(27,42,65,0.15);
+    border-radius:3px;
+    padding:12px 14px;
+  }
+  .goal-field label{
+    display:block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.68rem;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:var(--brass);
+    margin-bottom:6px;
+  }
+  .goal-field input{
+    width:100%;
+    border:none;
+    background:transparent;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:1.05rem;
+    color:var(--charcoal);
+  }
+  .goal-field input:focus{outline:none;}
+
+  .projection-note{
+    margin-top:16px;
+    font-family:'Inter',sans-serif;
+    font-size:0.88rem;
+    line-height:1.5;
+    color:var(--charcoal);
+    background:rgba(255,255,255,0.35);
+    border-left:3px solid var(--brass);
+    padding:12px 16px;
+    border-radius:0 3px 3px 0;
+  }
+  .projection-note strong{color:var(--ink-navy);}
+
+  canvas#trendChart{
+    margin-top:14px;
+    width:100% !important;
+    height:170px !important;
+  }
+
+  /* ---------- Tape sidebar (signature element) ---------- */
+  .tape-column{
+    background:#1F3049;
+    padding:28px 22px 40px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .tape-title{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.68rem;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--brass);
+    margin-bottom:14px;
+  }
+  .tape{
+    background:#FBF8F0;
+    width:100%;
+    border-radius:2px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.35);
+    padding:16px 14px 20px;
+    position:relative;
+  }
+  .tape::before, .tape::after{
+    content:'';
+    position:absolute;
+    left:0; right:0;
+    height:8px;
+    background:
+      linear-gradient(135deg, transparent 50%, #1F3049 50%) top left,
+      linear-gradient(-135deg, transparent 50%, #1F3049 50%) top right;
+    background-size:8px 8px;
+    background-repeat:repeat-x;
+  }
+  .tape::before{top:-1px;transform:rotate(180deg);}
+  .tape::after{bottom:-1px;}
+  .tape-line{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.76rem;
+    display:flex;
+    justify-content:space-between;
+    padding:3px 0;
+    color:var(--charcoal);
+    border-bottom:1px dotted rgba(0,0,0,0.15);
+  }
+  .tape-line.total{
+    margin-top:8px;
+    padding-top:10px;
+    border-top:1px solid var(--charcoal);
+    border-bottom:none;
+    font-weight:700;
+  }
+  .tape-line .neg{color:var(--ledger-red);}
+  .tape-line .pos{color:var(--ledger-green);}
+
+  .runway{
+    margin-top:22px;
+    width:100%;
+    text-align:center;
+  }
+  .runway .figure{
+    font-family:'Fraunces', serif;
+    font-weight:700;
+    font-size:2.2rem;
+    color:#F4EEDC;
+  }
+  .runway .figure.negative{color:#E8998A;}
+  .runway .caption{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:0.68rem;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:rgba(244,238,220,0.65);
+    margin-top:6px;
+  }
+
+  ::selection{background:var(--brass);color:#fff;}
+</style>
+</head>
+<body>
+
+<div class="book">
+
+  <div class="masthead">
+    <div>
+      <h1>Ledger</h1>
+      <div class="sub">Budget &amp; Cash Flow Planner</div>
+    </div>
+    <div class="date" id="today"></div>
+  </div>
+
+  <div class="ledger-main">
+
+    <div class="section-label">Income</div>
+    <div class="income-row">
+      <label for="income">Monthly take-home pay</label>
+      <input type="number" id="income" class="money-input" value="5200" min="0" step="10">
+    </div>
+
+    <div class="section-label">Fixed &amp; variable expenses</div>
+    <div id="expenseList"></div>
+    <button class="add-row" id="addExpense">+ Add line item</button>
+
+    <div class="balance-block">
+      <span class="label">Net monthly balance</span>
+      <span class="amount" id="netAmount">$0</span>
+    </div>
+
+    <div class="section-label">Savings goal</div>
+    <div class="goal-grid">
+      <div class="goal-field">
+        <label for="goalAmount">Target amount</label>
+        <input type="number" id="goalAmount" value="15000" min="0" step="100">
+      </div>
+      <div class="goal-field">
+        <label for="goalMonths">Projection window (months)</label>
+        <input type="number" id="goalMonths" value="12" min="1" max="60" step="1">
+      </div>
+    </div>
+    <div class="projection-note" id="projectionNote"></div>
+    <canvas id="trendChart"></canvas>
+  </div>
+
+  <div class="tape-column">
+    <div class="tape-title">Running Tape</div>
+    <div class="tape" id="tape"></div>
+
+    <div class="runway">
+      <div class="figure" id="runwayFigure">—</div>
+      <div class="caption" id="runwayCaption">Months to goal</div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+document.getElementById('today').textContent = new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
+
+const defaultExpenses = [
+  {name:'Housing / rent', amount:1650},
+  {name:'Groceries', amount:520},
+  {name:'Transportation', amount:280},
+  {name:'Utilities', amount:210},
+  {name:'Insurance', amount:190},
+  {name:'Subscriptions', amount:65},
+  {name:'Dining out', amount:220},
+];
+
+let expenses = JSON.parse(JSON.stringify(defaultExpenses));
+let idCounter = 0;
+expenses.forEach(e => e.id = idCounter++);
+
+const listEl = document.getElementById('expenseList');
+const incomeEl = document.getElementById('income');
+const netEl = document.getElementById('netAmount');
+const tapeEl = document.getElementById('tape');
+const goalAmountEl = document.getElementById('goalAmount');
+const goalMonthsEl = document.getElementById('goalMonths');
+const projectionNoteEl = document.getElementById('projectionNote');
+const runwayFigureEl = document.getElementById('runwayFigure');
+const runwayCaptionEl = document.getElementById('runwayCaption');
+
+function fmt(n){
+  const neg = n < 0;
+  const val = Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:0});
+  return (neg? '-$':'$') + val;
+}
+
+function renderExpenses(){
+  listEl.innerHTML = '';
+  expenses.forEach(exp => {
+    const row = document.createElement('div');
+    row.className = 'line-item';
+    row.innerHTML = `
+      <input class="name-input" data-id="${exp.id}" data-field="name" value="${exp.name}">
+      <div class="leader"></div>
+      <input type="number" class="money-input" data-id="${exp.id}" data-field="amount" value="${exp.amount}" min="0" step="5">
+      <button class="remove-btn" data-id="${exp.id}" title="Remove">✕</button>
+    `;
+    listEl.appendChild(row);
+  });
+}
+
+let chart;
+function recalc(){
+  const income = parseFloat(incomeEl.value) || 0;
+  const totalExpenses = expenses.reduce((s,e) => s + (parseFloat(e.amount)||0), 0);
+  const net = income - totalExpenses;
+
+  netEl.textContent = fmt(net);
+  netEl.className = 'amount ' + (net >= 0 ? 'positive' : 'negative');
+
+  // Tape
+  let tapeHtml = `<div class="tape-line"><span>Income</span><span class="pos">${fmt(income)}</span></div>`;
+  expenses.forEach(e => {
+    tapeHtml += `<div class="tape-line"><span>${e.name || 'Untitled'}</span><span class="neg">-${fmt(Math.abs(e.amount||0)).replace('-','')}</span></div>`;
+  });
+  tapeHtml += `<div class="tape-line total"><span>Net</span><span class="${net>=0?'pos':'neg'}">${fmt(net)}</span></div>`;
+  tapeEl.innerHTML = tapeHtml;
+
+  // Goal / projection
+  const goal = parseFloat(goalAmountEl.value) || 0;
+  const months = parseInt(goalMonthsEl.value) || 12;
+
+  const labels = [];
+  const data = [];
+  let running = 0;
+  for(let m=1; m<=months; m++){
+    running += net;
+    labels.push('M'+m);
+    data.push(Math.round(running));
+  }
+
+  if(net <= 0){
+    runwayFigureEl.textContent = '—';
+    runwayFigureEl.className = 'figure negative';
+    runwayCaptionEl.textContent = 'No surplus to save';
+    projectionNoteEl.innerHTML = `At the current pace you are running a monthly deficit of <strong>${fmt(Math.abs(net))}</strong>. Trim expenses before setting a savings goal.`;
+  } else {
+    const monthsToGoal = goal > 0 ? Math.ceil(goal / net) : 0;
+    runwayFigureEl.textContent = monthsToGoal;
+    runwayFigureEl.className = 'figure';
+    runwayCaptionEl.textContent = 'Months to reach goal';
+    const reachesInWindow = monthsToGoal <= months;
+    projectionNoteEl.innerHTML = reachesInWindow
+      ? `Saving <strong>${fmt(net)}</strong> a month, you'll reach <strong>${fmt(goal)}</strong> in <strong>${monthsToGoal} month${monthsToGoal===1?'':'s'}</strong> — within your ${months}-month window.`
+      : `Saving <strong>${fmt(net)}</strong> a month, you'll have <strong>${fmt(data[data.length-1])}</strong> after ${months} months — reaching <strong>${fmt(goal)}</strong> takes <strong>${monthsToGoal} months</strong> in total.`;
+  }
+
+  if(chart) chart.destroy();
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  chart = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        label:'Projected savings',
+        data,
+        borderColor:'#2F6F4E',
+        backgroundColor:'rgba(47,111,78,0.12)',
+        pointRadius:0,
+        borderWidth:2.5,
+        fill:true,
+        tension:0.25
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{display:false}, ticks:{font:{family:'IBM Plex Mono',size:10}, color:'#2E2A26'}},
+        y:{grid:{color:'rgba(27,42,65,0.08)'}, ticks:{font:{family:'IBM Plex Mono',size:10}, color:'#2E2A26', callback:v=>'$'+v.toLocaleString()}}
+      }
+    }
+  });
+}
+
+listEl.addEventListener('input', (e) => {
+  const id = parseInt(e.target.dataset.id);
+  const field = e.target.dataset.field;
+  const exp = expenses.find(x => x.id === id);
+  if(!exp) return;
+  exp[field] = field === 'amount' ? parseFloat(e.target.value)||0 : e.target.value;
+  recalc();
+});
+
+listEl.addEventListener('click', (e) => {
+  if(e.target.classList.contains('remove-btn')){
+    const id = parseInt(e.target.dataset.id);
+    expenses = expenses.filter(x => x.id !== id);
+    renderExpenses();
+    recalc();
+  }
+});
+
+document.getElementById('addExpense').addEventListener('click', () => {
+  expenses.push({id: idCounter++, name:'New item', amount:0});
+  renderExpenses();
+  recalc();
+});
+
+[incomeEl, goalAmountEl, goalMonthsEl].forEach(el => el.addEventListener('input', recalc));
+
+renderExpenses();
+recalc();
+</script>
+</body>
+</html>
